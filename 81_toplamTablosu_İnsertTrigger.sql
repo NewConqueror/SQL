@@ -1,0 +1,48 @@
+SELECT * FROM ITEMTRANSACTIONS
+
+SELECT * FROM STOCK
+
+INSERT INTO ITEMTRANSACTIONS ( ITEMID, AMOUNT, IOTYPE, DATE_)
+
+VALUES ( 1,5,2, GETDATE() )
+
+UPDATE STOCK SET STOCK= STOCK -5 WHERE ITEMID =1
+
+/* stock ekleme ya da azaltmayı kendi yapsın istiyoruz bunun için trigger yazıcaz*/
+
+TRUNCATE TABLE ITEMTRANSACTIONS
+
+CREATE TRIGGER TRG_TRANSACTION_INSERT
+
+ON ITEMTRANSACTIONS
+
+AFTER INSERT
+
+AS
+
+BEGIN
+
+DECLARE @ITEMID AS INT
+
+DECLARE @AMOUNT AS INT
+
+DECLARE @IOTYPE AS SMALLINT
+
+SELECT @ITEMID=ITEMID, @AMOUNT=AMOUNT, @IOTYPE=IOTYPE FROM INSERTED
+
+/* ınserted gerçekte yok sanal tablo sadece trigger anında oluşan view gibi düşün
+
+o anki yeni eklenen verilerin tutulduğu kayıtlar
+
+*/
+
+/* 1 se yani Giriş ise ekle 2 yani çıkış ise çıkar */
+IF @IOTYPE =1 
+
+UPDATE STOCK SET STOCK=STOCK+@AMOUNT WHERE  ITEMID=@ITEMID 
+
+IF @IOTYPE=2
+
+UPDATE STOCK SET STOCK=STOCK-@AMOUNT WHERE ITEMID= @ITEMID 
+
+END

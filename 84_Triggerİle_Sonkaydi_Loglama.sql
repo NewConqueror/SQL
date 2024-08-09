@@ -1,0 +1,110 @@
+SET STATISTICS IO ON
+
+SELECT *,
+
+( SELECT TOP 1 IOTYPE FROM WORKERTRANSACTIONS WHERE WORKERID=W.ID ORDER BY DATE_ DESC ) SON HAREKETTURU,
+
+( SELECT MAX(DATE_) FROM WORKERTRANSACTIONS WHERE WORKERID=W.ID) SON HAREKET ZAMANI
+
+FROM WORKERS W  /* burda 5810575 page okuyor*/
+
+SELECT * FROM WORKER_LAST TRANSACTIONS /* burda ise sadece 9 page 645 bin kat daha performanslı oldu program */
+
+
+
+CREATE TRIGGER TRG_TRANSACTION_INSERT
+
+ON WORKERTRANSACTIONS
+
+AFTER INSERT
+
+AS
+
+BEGIN
+
+DECLARE @WORKERID AS INT
+
+DECLARE @DATE AS DATETIME
+
+DECLARE @IOTYPE AS VARCHAR(1)
+
+SELECT @WORKERID = WORKERID, @DATE = DATE_, @IOTYPE = IOTYPE FROM INSERTED 
+/* ınserted den yani worker transactıonstan alıyor değerleri */
+
+UPDATE WORKER_LAST_TRANSACTIONS SET LASTIOTYPE = @IOTYPE, LASTDATE = @DATE WHERE WORKERID = @WORKERID
+
+END
+
+
+
+
+INSERT INTO WORKER_LAST_TRANSACTIONS
+(WORKERID)
+SELECT ID FROM WORKERS
+/* bütün personelleri attı lastdate lastıotype kısmı boş kaldı onu da trıgger ile halledicez */
+
+
+
+SELECT MAX(WORKERID), COUNT(*) FROM WORKERTRANSACTIONS
+
+SET STATISTICS IO ON
+
+SELECT *,
+
+( SELECT TOP 1 IOTYPE FROM WORKERTRANSACTIONS WHERE WORKERID=W.ID ORDER BY DATE_ DESC ) SON HAREKETTURU,
+
+( SELECT MAX(DATE_) FROM WORKERTRANSACTIONS WHERE WORKERID=W.ID) SON HAREKET ZAMANI
+
+FROM WORKERS W
+
+WHERE ID = 1
+
+/*	44 GB lık veri okumuş yuh aq bunu böyle yapmak yerine her kullanıcı giriş ya da çıkış yaptığı anda
+	onun g c yaptığı bilgisi başka bir tabloya otomatik yazılsa ve her seferinde bu update olsa
+	güncellense bizim sorunumuz çözülürdü bunun için tablo oluşturduk worker last transactıons
+*/
+
+DECLARE @I AS INT
+WHILE @I<=100
+BEGIN
+	EXEC GENERATE_WORKER_TRANSACTION  /* bu rastgele gc değerleri oluşturuyor 100 dedik yani
+										 100 kere oluşturacak*/
+	SET @I = @I+1
+END
+
+/* ınsert ınto da teker teker veri girmektense tablodan toplu şekilde içeri atıcaz*/
+
+INSERT INTO WORKERS
+
+( WORKERCODE , WORKERNAME, GENDER, BIRTHDATE, TCNO, WORKERBARCODE )
+
+SELECT TOP 1000
+
+TCNO AS WORKERCODE, NAMESURNAME AS WORKERNAME,  GENDER, BIRTHDATE, TCNO, NEWID() AS WORKERBARCODE
+
+FROM CRM2.DBO.CUSTOMERS
+
+/*CRM2 de customers tablosunun içindeki çalışanları workers ın içine atıcaz 
+ama bunu nasıl yapıcaz aga yukarıdaki gibi*/
+
+SELECT WORKERCODE, WORKERNAME, GENDER , BIRTHDATE, TCNO, WORKERBARCODE FROM WORKERS
+
+SELECT TOP 1000
+
+TCNO AS WORKERCODE, NAMESURNAME AS WORKERNAME,  GENDER, BIRTHDATE, TCNO, NEWID() AS WORKERBARCODE
+
+FROM CRM2.DBO.CUSTOMERS
+
+
+
+SELECT TOP 1000
+
+TCNO AS WORKERCODE, NAMESURNAME AS WORKERNAME,  GENDER, BIRTHDATE, TCNO, NEWID() AS WORKERBARCODE
+
+FROM CRM2.DBO.CUSTOMERS
+
+/* ortak alanları bulmaya çalışalım */
+
+SELECT * FROM WORKERS
+
+SELECT  TOP 1000 * FROM CRM2.DBO.CUSTOMERS
